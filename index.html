@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OctoCraft Platform Documentation</title>
+<meta name="description" content="Architecture, capabilities, configuration, security, operations and review of OctoCraft, an approval workspace that creates GitHub Apps and hands off their credentials." />
+<meta name="theme-color" content="#141414" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23e0592a'/><ellipse cx='32' cy='25' rx='10.5' ry='9.5' fill='%23fff'/><ellipse cx='28' cy='25' rx='1.7' ry='2.6' fill='%23e0592a'/><ellipse cx='36' cy='25' rx='1.7' ry='2.6' fill='%23e0592a'/><g fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round'><path d='M24 31c-4 6-8 8-13 8'/><path d='M29 34c-1.5 6-1.5 10 1 14'/><path d='M35 34c1.5 6 1.5 10-1 14'/><path d='M40 31c4 6 8 8 13 8'/></g></svg>" />
+<script>try{var t=localStorage.getItem('octocraft-docs-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+  :root {
+    --bg:#ffffff; --surface:#fafafb; --surface-2:#f4f5f8; --border:#e4e6ec; --border-strong:#cfd3dd;
+    --text:#11131a; --text-2:#353a4a; --muted:#646a7d;
+    --brand:#e0592a; --link:#b8461c; --brand-tint:#fdf1eb; --brand-border:#f6d3c4;
+    --code-bg:#f3f4f7; --code-border:#e4e6ec; --pre-bg:#14161b; --pre-text:#e8e9ec; --pre-border:#14161b;
+    --high:#b42318; --high-bg:#fef3f2; --high-border:#fecdca;
+    --med:#93500a; --med-bg:#fffaeb; --med-border:#fedf89;
+    --low:#175cd3; --low-bg:#eff8ff; --low-border:#b2ddff;
+    --d-edge:#9ba1b2; --d-tint:#f4f5f8; --d-accent:#e0592a;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0e0f12; --surface:#15171b; --surface-2:#1a1d22; --border:#2a2e36; --border-strong:#3a3f49;
+      --text:#ecedf0; --text-2:#c8cbd3; --muted:#969cab;
+      --brand:#f2845a; --link:#f5a07e; --brand-tint:rgba(242,132,90,.10); --brand-border:rgba(242,132,90,.32);
+      --code-bg:#1d2026; --code-border:#2a2e36; --pre-bg:#08090b; --pre-text:#e8e9ec; --pre-border:#2a2e36;
+      --high:#fda29b; --high-bg:rgba(240,68,56,.12); --high-border:rgba(240,68,56,.35);
+      --med:#fec84b; --med-bg:rgba(247,144,9,.12); --med-border:rgba(247,144,9,.35);
+      --low:#84caff; --low-bg:rgba(46,144,250,.12); --low-border:rgba(46,144,250,.35);
+      --d-edge:#5f6573; --d-tint:#1a1d22; --d-accent:#f2845a;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0e0f12; --surface:#15171b; --surface-2:#1a1d22; --border:#2a2e36; --border-strong:#3a3f49;
+    --text:#ecedf0; --text-2:#c8cbd3; --muted:#969cab;
+    --brand:#f2845a; --link:#f5a07e; --brand-tint:rgba(242,132,90,.10); --brand-border:rgba(242,132,90,.32);
+    --code-bg:#1d2026; --code-border:#2a2e36; --pre-bg:#08090b; --pre-text:#e8e9ec; --pre-border:#2a2e36;
+    --high:#fda29b; --high-bg:rgba(240,68,56,.12); --high-border:rgba(240,68,56,.35);
+    --med:#fec84b; --med-bg:rgba(247,144,9,.12); --med-border:rgba(247,144,9,.35);
+    --low:#84caff; --low-bg:rgba(46,144,250,.12); --low-border:rgba(46,144,250,.35);
+    --d-edge:#5f6573; --d-tint:#1a1d22; --d-accent:#f2845a;
+    color-scheme:dark;
+  }
+
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font:15.5px/1.65 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:var(--link); text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--link) 35%, transparent); text-underline-offset:2px; }
+  a:hover { text-decoration-color:currentColor; }
+  :focus-visible { outline:2px solid var(--brand); outline-offset:2px; border-radius:4px; }
+  .skip { position:absolute; left:-9999px; top:10px; z-index:100; background:var(--brand); color:#fff; padding:8px 12px; border-radius:8px; text-decoration:none; }
+  .skip:focus { left:16px; }
+
+  /* Top bar */
+  .topbar { position:sticky; top:0; z-index:50; background:#141414; color:#f3f1ee; border-bottom:1px solid #262626; }
+  .topbar-inner { max-width:1240px; margin:0 auto; height:60px; padding:0 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .brand { display:flex; align-items:center; gap:10px; color:inherit; text-decoration:none; min-width:0; }
+  .brand-mark { flex:none; width:28px; height:32px; }
+  .wordmark { font-size:19px; font-weight:700; letter-spacing:-.02em; color:#f3f1ee; white-space:nowrap; }
+  .wordmark em { font-style:normal; color:#ec6a3c; }
+  .brand-sep { width:1px; height:20px; background:#3a3a3a; flex:none; }
+  .brand-sub { font-size:14px; font-weight:500; color:#b7b3ad; white-space:nowrap; }
+  .top-actions { display:flex; align-items:center; gap:14px; font-size:13px; color:#b7b3ad; }
+  .theme-btn { display:inline-grid; place-items:center; width:34px; height:34px; border-radius:8px; border:1px solid #34343a; background:transparent; color:#f3f1ee; cursor:pointer; }
+  .theme-btn:hover { background:#222; }
+  .theme-btn svg { width:16px; height:16px; }
+
+  /* Layout */
+  .layout { max-width:1240px; margin:0 auto; padding:0 24px; display:grid; grid-template-columns:232px minmax(0,1fr); gap:56px; }
+  .toc { position:sticky; top:60px; align-self:start; max-height:calc(100vh - 60px); overflow-y:auto; padding:36px 0 24px; }
+  .toc summary { display:none; }
+  .toc-title { margin:0 0 10px 12px; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .toc ol { list-style:none; margin:0; padding:0; counter-reset:toc; }
+  .toc li { margin:0; }
+  .toc a { display:flex; gap:10px; padding:6px 12px; border-radius:8px; color:var(--text-2); text-decoration:none; font-size:14px; line-height:1.4; }
+  .toc a::before { counter-increment:toc; content:counter(toc, decimal-leading-zero); flex:none; padding-top:1px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .toc a:hover { background:var(--surface-2); color:var(--text); }
+  .toc a.active { background:var(--brand-tint); color:var(--text); font-weight:600; }
+  .toc a.active::before { color:var(--brand); }
+  .toc-meta { margin:20px 12px 0; padding-top:16px; border-top:1px solid var(--border); font-size:12.5px; line-height:1.55; color:var(--muted); }
+  main { min-width:0; max-width:880px; padding:40px 0 96px; }
+
+  /* Hero */
+  .hero { padding-bottom:28px; border-bottom:1px solid var(--border); }
+  .eyebrow { font-size:12.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--brand); }
+  h1 { margin:10px 0 12px; font-size:40px; line-height:1.15; letter-spacing:-.025em; font-weight:700; }
+  .hero p { max-width:720px; margin:0 0 18px; font-size:18px; color:var(--text-2); }
+  .meta { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { display:inline-flex; align-items:center; gap:7px; padding:3px 11px; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); font-size:12.5px; font-weight:500; color:var(--text-2); }
+  .chip .dot { width:7px; height:7px; border-radius:50%; background:var(--brand); }
+
+  /* Content */
+  section { scroll-margin-top:76px; }
+  h2 { margin:60px 0 14px; font-size:27px; line-height:1.25; letter-spacing:-.02em; font-weight:700; }
+  h2 .num { display:block; margin-bottom:6px; font-size:12.5px; font-weight:600; letter-spacing:.06em; color:var(--brand); font-variant-numeric:tabular-nums; }
+  h3 { margin:36px 0 10px; font-size:18.5px; line-height:1.35; letter-spacing:-.01em; font-weight:650; }
+  p { margin:0 0 14px; }
+  .lead { font-size:17px; color:var(--text-2); }
+  ul, ol { margin:0 0 16px; padding-left:22px; }
+  li { margin:6px 0; }
+  li::marker { color:var(--muted); }
+  strong { font-weight:650; color:var(--text); }
+  .callout { display:flex; gap:12px; align-items:flex-start; margin:18px 0; padding:14px 16px; border:1px solid var(--brand-border); border-radius:12px; background:var(--brand-tint); }
+  .callout svg { flex:none; width:18px; height:18px; margin-top:3px; color:var(--brand); }
+  .callout p { margin:0; }
+
+  .table-wrap { overflow-x:auto; margin:16px 0 22px; border:1px solid var(--border); border-radius:12px; background:var(--bg); }
+  table { width:100%; border-collapse:collapse; font-size:14px; line-height:1.5; }
+  th, td { padding:10px 14px; text-align:left; vertical-align:top; border-bottom:1px solid var(--border); }
+  th { background:var(--surface-2); font-size:13px; font-weight:600; color:var(--text-2); white-space:nowrap; }
+  tbody tr:last-child td { border-bottom:0; }
+  tbody tr:hover td { background:var(--surface); }
+  .nowrap { white-space:nowrap; }
+  .col-num { width:44px; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+  code { padding:.08em .36em; border:1px solid var(--code-border); border-radius:5px; background:var(--code-bg); font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace; font-size:.86em; }
+  pre { position:relative; margin:14px 0 20px; padding:16px 18px; overflow-x:auto; border:1px solid var(--pre-border); border-radius:12px; background:var(--pre-bg); color:var(--pre-text); font-size:13.5px; line-height:1.65; }
+  pre code { padding:0; border:0; background:none; color:inherit; font-size:inherit; }
+  pre .cm { color:#8b93a7; }
+  .copy { position:absolute; top:8px; right:8px; padding:6px 9px; border:1px solid #33373f; border-radius:6px; background:#23262d; color:#c9cbd1; font:500 12px/1 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; opacity:0; transition:opacity .15s; }
+  pre:hover .copy, .copy:focus-visible { opacity:1; }
+  @media (hover:none) { .copy { opacity:1; } }
+
+  figure { margin:18px 0 22px; padding:12px; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+  .fig-scroll { overflow-x:auto; }
+  figure svg { display:block; width:100%; height:auto; min-width:620px; }
+  figcaption { padding:8px 6px 2px; font-size:13px; color:var(--muted); }
+
+  .dg text { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .dg-title { font-size:15px; font-weight:600; fill:var(--text); }
+  .dg-sub, .dg-line { font-size:11.5px; fill:var(--muted); }
+  .dg-name { font-size:13px; font-weight:600; fill:var(--text); }
+  .dg-ink { font-size:11.5px; fill:var(--text); }
+  .dg-box { fill:none; stroke:var(--d-edge); stroke-width:1.25; }
+  .dg-tint { fill:var(--d-tint); stroke:var(--d-edge); stroke-width:1.25; }
+  .dg-accent { fill:var(--d-accent); fill-opacity:.12; stroke:var(--d-accent); stroke-width:2; }
+  .dg-edge { fill:none; stroke:var(--d-edge); stroke-width:1.25; }
+  .dg-dash { stroke-dasharray:4 4; }
+  .dg-head { fill:var(--d-edge); }
+
+  .sev { display:inline-flex; align-items:center; gap:6px; padding:2px 9px; border:1px solid; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
+  .sev::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .sev-high { color:var(--high); background:var(--high-bg); border-color:var(--high-border); }
+  .sev-med { color:var(--med); background:var(--med-bg); border-color:var(--med-border); }
+  .sev-low { color:var(--low); background:var(--low-bg); border-color:var(--low-border); }
+
+  .footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 20px; margin-top:72px; padding-top:24px; border-top:1px solid var(--border); font-size:13px; color:var(--muted); }
+
+  @media (max-width:1000px) {
+    .layout { grid-template-columns:minmax(0,1fr); gap:0; padding:0 16px; }
+    .toc { position:static; max-height:none; overflow:visible; padding:16px 0 0; }
+    .toc details { border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+    .toc summary { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; font-size:14px; font-weight:600; cursor:pointer; list-style:none; }
+    .toc summary::-webkit-details-marker { display:none; }
+    .toc summary::after { content:"+"; font-size:18px; line-height:1; color:var(--muted); }
+    .toc details[open] summary::after { content:"\2212"; }
+    .toc-title, .toc-meta { display:none; }
+    .toc ol { padding:0 6px 8px; }
+    main { padding-top:28px; }
+    h1 { font-size:32px; }
+    .topbar-inner { padding:0 16px; }
+    .top-date { display:none; }
+  }
+  @media (max-width:560px) {
+    body { font-size:15px; }
+    .hero p { font-size:16.5px; }
+    h2 { font-size:23px; margin-top:48px; }
+    .brand-sep, .brand-sub { display:none; }
+    table:has(th:nth-child(3)) { min-width:640px; }
+    th, td { padding:9px 12px; }
+  }
+  @media print {
+    .topbar, .toc, .copy, .skip { display:none; }
+    .layout { display:block; padding:0; }
+    main { max-width:none; padding:0; }
+    pre { white-space:pre-wrap; }
+    figure svg { min-width:0; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top" aria-label="OctoCraft documentation home">
+      <svg class="brand-mark" viewBox="0 0 48 54" aria-hidden="true">
+        <g fill="none" stroke="#e0592a" stroke-width="5" stroke-linecap="round"><path d="M13 26C7.5 30 6.5 38 9.5 45"/><path d="M35 26C40.5 30 41.5 38 38.5 45"/></g>
+        <ellipse cx="24" cy="14.5" rx="14" ry="12.5" fill="#e0592a"/>
+        <circle cx="18.5" cy="13" r="3.2" fill="#fff"/><circle cx="29.5" cy="13" r="3.2" fill="#fff"/>
+        <circle cx="18.5" cy="13" r="1.6" fill="#141414"/><circle cx="29.5" cy="13" r="1.6" fill="#141414"/>
+        <path d="M12 25h24v15.5c0 6-5.5 9.5-12 12.5-6.5-3-12-6.5-12-12.5z" fill="#f0efeb"/>
+        <path d="M18.5 38.5l4 4 7.5-8" fill="none" stroke="#141414" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="wordmark">Octo<em>Craft</em></span>
+      <span class="brand-sep" aria-hidden="true"></span>
+      <span class="brand-sub">Platform docs</span>
+    </a>
+    <div class="top-actions">
+      <span class="top-date">As of 17 Nov 2026</span>
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="Toggle light or dark theme" title="Toggle theme">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="layout" id="top">
+  <nav class="toc" aria-label="On this page">
+    <details open>
+      <summary>On this page</summary>
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#repository-layout">Repository layout</a></li>
+        <li><a href="#capabilities">Capabilities</a></li>
+        <li><a href="#configuration">Configuration reference</a></li>
+        <li><a href="#security">Security and access</a></li>
+        <li><a href="#running-locally">Running locally</a></li>
+        <li><a href="#testing">Testing and CI</a></li>
+        <li><a href="#deployment">Deployment</a></li>
+        <li><a href="#findings">Review findings</a></li>
+        <li><a href="#roadmap">Roadmap</a></li>
+      </ol>
+    </details>
+    <p class="toc-meta">Snapshot of the OctoCraft platform review, 17 November 2026. The OctoCraft source repository is private.</p>
+  </nav>
+
+  <main id="content">
+    <div class="hero">
+      <div class="eyebrow">Platform documentation</div>
+      <h1>OctoCraft Platform Documentation</h1>
+      <p>GitHub, managed as code: how OctoCraft turns a reviewed request into a GitHub App, where its credentials go, and how the platform is built, secured, tested and deployed.</p>
+      <div class="meta">
+        <span class="chip"><span class="dot"></span>Proof of concept</span>
+        <span class="chip">As of 17 Nov 2026</span>
+        <span class="chip">Go &middot; Helm &middot; Terraform &middot; AKS</span>
+        <span class="chip">Apache-2.0</span>
+      </div>
+    </div>
+
+    <!-- 01 Overview -->
+    <section id="overview">
+      <h2><span class="num">01</span>Overview</h2>
+      <p class="lead">OctoCraft turns a structured request into a GitHub App and delivers its credentials to a vault, with a person approving each app before it exists. It is a working proof of concept: the AKS runtime is deployed for internal use, and the original Azure Functions runtime is torn down.</p>
+      <div class="callout">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1" fill="currentColor"/></svg>
+        <p><strong>How it works in one line:</strong> request &rarr; reviewed manifest &rarr; browser-confirmed GitHub App &rarr; credentials in Key Vault, HashiCorp Vault or a ZIP outbox.</p>
+      </div>
+      <ul>
+        <li><strong>Intake.</strong> Requests arrive from a GitHub issue form (IssueOps) or, in the standalone runtime only, from ServiceNow catalog tasks (SCTASK, &ldquo;Phase 0&rdquo;).</li>
+        <li><strong>Review.</strong> Approvers see the requested permissions, owner and delivery target in the OctoCraft dashboard.</li>
+        <li><strong>Creation.</strong> GitHub requires a signed-in person to confirm the app; OctoCraft never creates an app on its own.</li>
+        <li><strong>Handoff.</strong> OctoCraft exchanges GitHub&rsquo;s one-time code for the app&rsquo;s ID, private key and secrets, then writes them to the chosen destination.</li>
+      </ul>
+      <p>The backend is Go; the dashboard is a single static HTML/CSS/JavaScript page. The code is licensed under Apache-2.0.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Runtime</th><th>Entry point</th><th>Packaging</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap">AKS POC</td><td><code>cmd/server</code></td><td>Container image + Helm chart</td><td>Deployed in <code>rg-octocraft-aks</code>: one node, one replica, internal-only behind an Entra OIDC proxy</td></tr>
+          <tr><td class="nowrap">Azure Functions</td><td><code>main.go</code></td><td>Functions ZIP on Linux Flex Consumption</td><td>Not deployed; <code>APP_FACTORY_ENABLED=false</code> disables its IssueOps path</td></tr>
+          <tr><td class="nowrap">Local / Docker Compose</td><td><code>cmd/server</code></td><td><code>go run</code> or <code>docker compose</code></td><td>Development only; binds to localhost under Compose</td></tr>
+        </tbody>
+      </table></div>
+      <p>Since PR #9 merged into <code>main</code>, a manual-only workflow converges the AKS infrastructure with Terraform and installs the latest stable release.</p>
+    </section>
+
+    <!-- 02 Architecture -->
+    <section id="architecture">
+      <h2><span class="num">02</span>Architecture</h2>
+      <p class="lead">OctoCraft is one Go server behind an identity proxy. It talks to four outside systems: the IssueOps workflow, ServiceNow, GitHub and Azure Key Vault.</p>
+      <figure>
+        <div class="fig-scroll">
+          <svg class="dg" viewBox="0 0 760 544" role="img" aria-labelledby="arch-title">
+            <title id="arch-title">One Go server behind an identity proxy runs intake, approval and credential handoff</title>
+            <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="dg-head" d="M0 0L10 5L0 10z"/></marker></defs>
+            <text class="dg-title" x="24" y="28">One Go server behind an identity proxy runs intake, approval and credential handoff</text>
+            <text class="dg-sub" x="24" y="48">Live AKS POC; the dormant Azure Functions runtime uses the same handler</text>
+            <rect class="dg-tint" x="220" y="152" width="320" height="336" rx="8"/>
+            <text class="dg-name" x="236" y="176">AKS POC cluster</text>
+            <rect class="dg-box" x="236" y="64" width="288" height="56" rx="8"/>
+            <text class="dg-name" x="252" y="88">Approver (browser)</text>
+            <text class="dg-line" x="252" y="104">Reviews requests, confirms apps</text>
+            <rect class="dg-box" x="236" y="192" width="288" height="56" rx="8"/>
+            <text class="dg-name" x="252" y="216">Entra OIDC proxy (oauth2-proxy)</text>
+            <text class="dg-line" x="252" y="232">Forwards verified subject and roles</text>
+            <rect class="dg-accent" x="236" y="280" width="288" height="104" rx="8"/>
+            <text class="dg-name" x="252" y="304">OctoCraft server, 1 replica</text>
+            <text class="dg-ink" x="252" y="320">Serves the dashboard and /api</text>
+            <text class="dg-ink" x="252" y="336">GitHub App flow and credential handoff</text>
+            <text class="dg-ink" x="252" y="352">Phase 0 API at /api/v1</text>
+            <text class="dg-ink" x="252" y="368">ServiceNow poller and writeback workers</text>
+            <rect class="dg-box" x="236" y="416" width="288" height="56" rx="8"/>
+            <text class="dg-name" x="252" y="440">Retained managed-disk PVC, 1 GiB</text>
+            <text class="dg-line" x="252" y="456">SQLite octocraft.db and requests.json</text>
+            <rect class="dg-box" x="24" y="272" width="172" height="88" rx="8"/>
+            <text class="dg-name" x="40" y="296">IssueOps (Actions)</text>
+            <text class="dg-line" x="40" y="312">Issue form to manifest</text>
+            <text class="dg-line" x="40" y="328">POSTs /api/ingest</text>
+            <text class="dg-line" x="40" y="344">Switched off today</text>
+            <rect class="dg-box" x="24" y="408" width="172" height="88" rx="8"/>
+            <text class="dg-name" x="40" y="432">ServiceNow</text>
+            <text class="dg-line" x="40" y="448">sc_task via Azure APIM</text>
+            <text class="dg-line" x="40" y="464">Polled every 300 s</text>
+            <text class="dg-line" x="40" y="480">Connection disabled</text>
+            <rect class="dg-box" x="564" y="272" width="172" height="72" rx="8"/>
+            <text class="dg-name" x="580" y="296">GitHub.com</text>
+            <text class="dg-line" x="580" y="312">App manifest flow</text>
+            <text class="dg-line" x="580" y="328">One-time code exchange</text>
+            <rect class="dg-box" x="564" y="360" width="172" height="72" rx="8"/>
+            <text class="dg-name" x="580" y="384">Azure Key Vault</text>
+            <text class="dg-line" x="580" y="400">Stores app credentials</text>
+            <text class="dg-line" x="580" y="416">Workload Identity</text>
+            <path class="dg-edge" d="M380 120V192" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge" d="M380 248V280" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge" d="M380 384V416" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge" d="M524 300H564" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge" d="M524 372H564" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge" d="M524 92H650V272" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge dg-dash" d="M196 316H236" marker-end="url(#arch-arrow)"/>
+            <path class="dg-edge dg-dash" d="M236 376H110V408" marker-end="url(#arch-arrow)"/>
+            <text class="dg-line" x="388" y="140">Entra sign-in</text>
+            <text class="dg-line" x="388" y="268">identity headers</text>
+            <text class="dg-line" x="658" y="184">confirms app</text>
+            <line class="dg-edge dg-dash" x1="24" y1="520" x2="56" y2="520"/>
+            <text class="dg-line" x="64" y="524">Dashed: path switched off today</text>
+          </svg>
+        </div>
+        <figcaption>AKS POC runtime &middot; one server, its proxy, storage and four outside systems</figcaption>
+      </figure>
+      <p>GitHub&rsquo;s redirect to <code>/callback</code> returns through the approver&rsquo;s browser and the proxy. In the dormant Functions runtime, Easy Auth replaces the proxy, and Azure Table Storage plus a Blob outbox replace the PVC.</p>
+    </section>
+
+    <!-- 03 Repository layout -->
+    <section id="repository-layout">
+      <h2><span class="num">03</span>Repository layout</h2>
+      <p class="lead">The repository is one Go module with two entry points that share the same GitHub App handler. Runtime code lives in <code>cmd/</code>, <code>internal/</code> and <code>public/</code>; everything else is configuration, packaging, infrastructure or tests.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Path</th><th>What lives there</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap"><code>cmd/server/</code></td><td>Standalone HTTP server: GitHub App workspace, Phase 0 <code>/api/v1</code>, ServiceNow poller and writeback workers</td></tr>
+          <tr><td class="nowrap"><code>main.go</code></td><td>Azure Functions entry point (native Go worker) with the dashboard embedded</td></tr>
+          <tr><td class="nowrap"><code>cmd/dbbackup/</code></td><td>SQLite online backup that verifies integrity and writes to a new file</td></tr>
+          <tr><td class="nowrap"><code>internal/factory/</code></td><td>Shared GitHub App handler: intake, manifest flow, callback, credential delivery, local and Azure Table stores</td></tr>
+          <tr><td class="nowrap"><code>internal/httpapi/v1/</code></td><td>Phase 0 REST API and its authenticators (trusted proxy headers, local dev)</td></tr>
+          <tr><td class="nowrap"><code>internal/jobs/</code></td><td>Job model, operation registry, routing, approval service and runner</td></tr>
+          <tr><td class="nowrap"><code>internal/servicenow/</code></td><td><code>connector</code> (Azure APIM and Table API transports), <code>poller</code> (SCTASK sync), <code>writeback</code> (leased outbox)</td></tr>
+          <tr><td class="nowrap"><code>internal/persistence/sqlite/</code></td><td>SQLite store for tickets, jobs, executions and outbox; migrations and backup</td></tr>
+          <tr><td><code>internal/config/</code>, <code>internal/tickets/</code></td><td>Strict YAML loader for <code>config/</code>; ticket model</td></tr>
+          <tr><td class="nowrap"><code>config/</code></td><td>App settings, ServiceNow connections, routing rules, approval policies</td></tr>
+          <tr><td class="nowrap"><code>db/migrations/</code></td><td>SQLite schema (<code>0001_phase0.sql</code>)</td></tr>
+          <tr><td class="nowrap"><code>public/</code></td><td>Dashboard (<code>index.html</code>) and brand asset</td></tr>
+          <tr><td class="nowrap"><code>charts/octocraft/</code></td><td>Helm chart: Deployment, Service, PVC, NetworkPolicy, ServiceAccount, values schema, AKS example values</td></tr>
+          <tr><td class="nowrap"><code>infra/</code></td><td>Terraform for the Azure Functions runtime, with <code>tests/</code></td></tr>
+          <tr><td class="nowrap"><code>infra/aks/</code></td><td>Terraform root that adopts the AKS POC: cluster, egress IP, identities, federation, Key Vault, roles</td></tr>
+          <tr><td class="nowrap"><code>scripts/</code></td><td>IssueOps parser, provision and deprovision, GitHub protection setup, version bump, seed helper; <code>scripts/aks/</code> bootstraps state and OIDC and imports existing resources</td></tr>
+          <tr><td class="nowrap"><code>test/</code></td><td>IssueOps parser test, Playwright browser tests, Helm and AKS infrastructure checks</td></tr>
+          <tr><td class="nowrap"><code>.github/</code></td><td>Workflows, issue form, CODEOWNERS, PR template, <code>main</code> ruleset</td></tr>
+          <tr><td class="nowrap"><code>docs/</code></td><td>Architecture, operations runbook, cost model, design specs and plans, screenshots</td></tr>
+          <tr><td><code>Dockerfile</code>, <code>compose.yaml</code></td><td>Hardened standalone container and local data volume</td></tr>
+          <tr><td><code>host.json</code>, <code>local.settings.example.json</code></td><td>Azure Functions host and local settings</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 04 Capabilities -->
+    <section id="capabilities">
+      <h2><span class="num">04</span>Capabilities</h2>
+      <p class="lead">OctoCraft automates one operation end to end today: GitHub App creation. ServiceNow intake also routes three more operation types, but OctoCraft refuses to approve or run them until each is registered.</p>
+
+      <h3>GitHub App requests (IssueOps)</h3>
+      <ol>
+        <li>A requester submits the <strong>GitHub App request</strong> issue form.</li>
+        <li>The IssueOps workflow parses the issue into a manifest and posts it to <code>POST /api/ingest</code> with a bearer token. It then comments a review link and adds the <code>awaiting-approval</code> label.</li>
+        <li>An approver reviews permissions, owner and delivery target in the dashboard, then selects <strong>Create on GitHub</strong>.</li>
+        <li>The browser posts the manifest to GitHub, and a person with app-creation rights confirms it.</li>
+        <li>GitHub redirects to <code>/callback</code>. OctoCraft exchanges the one-time code for the app ID, client secret, private key and webhook secret.</li>
+        <li>Credentials go to the chosen destination. Only then is the request marked <code>created</code>.</li>
+      </ol>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Meaning</th><th>Next actions</th></tr></thead>
+        <tbody>
+          <tr><td><code>pending</code></td><td>Intake complete; no app yet</td><td>Start, simulate (if enabled), reject</td></tr>
+          <tr><td><code>awaiting_github</code></td><td>Browser flow started; the user may have abandoned GitHub</td><td>Start again, reset, reject</td></tr>
+          <tr><td><code>failed</code></td><td>GitHub code conversion returned an error</td><td>Inspect, reset, start again</td></tr>
+          <tr><td><code>created</code></td><td>Credentials delivered</td><td>View metadata, download outbox file</td></tr>
+          <tr><td><code>rejected</code></td><td>Operator rejected it; reason recorded</td><td>Same app name may be requested again</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>ServiceNow intake (Phase 0)</h3>
+      <p>The standalone server polls ServiceNow catalog tasks (<code>sc_task</code>) through Azure API Management every 300 seconds. Each ticket becomes one job. Routing uses only the catalog item ID and structured request variables; free text never selects an operation. Exactly one rule must match, otherwise the job is marked <code>needs_mapping</code> or <code>ambiguous</code>.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Routing rule</th><th>Operation</th><th>Approval policy</th><th>Supported today?</th></tr></thead>
+        <tbody>
+          <tr><td><code>github-app-create</code></td><td><code>github_app.create</code></td><td><code>standard-admin</code></td><td>Manual handoff to the GitHub App flow</td></tr>
+          <tr><td><code>repository-create</code></td><td><code>repository.create</code></td><td><code>standard-admin</code></td><td>No: operation not registered</td></tr>
+          <tr><td><code>shared-github-catalog-grant</code></td><td><code>repository.team_access.grant</code></td><td><code>access-change</code></td><td>No: operation not registered</td></tr>
+          <tr><td><code>shared-github-catalog-remove</code></td><td><code>repository.team_access.remove</code></td><td><code>access-change</code></td><td>No: operation not registered</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li><strong>Approvals:</strong> both policies need one approver, block requesters from approving their own job, and bind the approval to a hash of the normalized plan. Approval is refused when the operation is unregistered or the ServiceNow requester cannot be resolved.</li>
+        <li><strong>No auto-execution:</strong> <code>processing.auto_execute</code> is <code>false</code>; an approved <code>github_app.create</code> job becomes <code>manual_action_required</code>.</li>
+        <li><strong>Writeback:</strong> status updates to ServiceNow go through a separate leased outbox. The sample connection has <code>update_task: false</code>, so writeback shows as a manual action.</li>
+        <li><strong>Sample data:</strong> the <code>snow-prod</code> connection is disabled, its base URL is <code>api.example.com</code>, and the catalog IDs are placeholders.</li>
+      </ul>
+
+      <h3>Credential delivery</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Destination</th><th>Chosen when</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap">HashiCorp Vault (KV v2)</td><td><code>VAULT_ADDR</code> and <code>VAULT_TOKEN</code> are set</td><td>Takes precedence; defaults to mount <code>secret</code>, prefix <code>github-apps</code></td></tr>
+          <tr><td class="nowrap">Azure Key Vault</td><td><code>KEY_VAULT_URL</code> is set</td><td>Managed identity on Functions, Workload Identity on AKS</td></tr>
+          <tr><td class="nowrap">Mock vault</td><td>Neither is set</td><td>Writes under <code>DATA_DIR</code>; local development only</td></tr>
+          <tr><td class="nowrap">ZIP outbox</td><td>Requester picks email/ZIP</td><td>ZIP plus an <code>.eml</code> draft; <strong>never sent</strong>. Blocked when <code>VAULT_ONLY=true</code>, as on AKS</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Manual AKS release deployment</h3>
+      <p>An operator runs <strong>Deploy AKS release (manual)</strong> from <code>main</code>. The workflow converges the existing AKS infrastructure with Terraform, then installs the latest stable release&rsquo;s chart and image. See <a href="#deployment">Deployment</a>.</p>
+    </section>
+
+    <!-- 05 Configuration -->
+    <section id="configuration">
+      <h2><span class="num">05</span>Configuration reference</h2>
+      <p class="lead">Behaviour comes from four YAML files under <code>config/</code> and a set of environment variables. Secrets are passed by reference (<code>env:NAME</code>) or as mounted files, never written in YAML. On AKS the YAML is mounted read-only from the <code>octocraft-config</code> ConfigMap at <code>/app/config</code>.</p>
+
+      <h3>Configuration files</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>File</th><th>Kind</th><th>What it controls</th></tr></thead>
+        <tbody>
+          <tr><td><code>config/app.yaml</code></td><td><code>ApplicationConfig</code></td><td>SQLite at <code>/data/octocraft.db</code> (WAL, 5,000 ms busy timeout); 1 replica, worker concurrency 1; ServiceNow polling every 300 s; <code>auto_execute: false</code>, 3 attempts max; catalog values redacted by default</td></tr>
+          <tr><td><code>config/connections/snow-prod.yaml</code></td><td><code>ServiceNowConnection</code></td><td>Azure APIM transport with key <code>env:SNOW_APIM_KEY</code>; table <code>sc_task</code>; 100 rows per page, 7-day initial lookback, 120 s overlap; <code>read_ritm</code> and <code>update_task</code> off; <strong>disabled</strong></td></tr>
+          <tr><td><code>config/routing/github-catalogs.yaml</code></td><td><code>ServiceNowRouting</code></td><td>Four catalog rules, <code>match_behavior: exactly_one</code></td></tr>
+          <tr><td><code>config/policies/approvals.yaml</code></td><td><code>ApprovalPolicies</code></td><td><code>standard-admin</code> and <code>access-change</code>: 1 approver, no self-approval, plan hash must match</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Application environment variables</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>PORT</code></td><td><code>3000</code></td><td>HTTP listen port</td></tr>
+          <tr><td><code>DATA_DIR</code></td><td><code>data</code> (Helm: <code>/data</code>)</td><td>Request store, mock vault and outbox files</td></tr>
+          <tr><td><code>OCTOCRAFT_SQLITE_PATH</code></td><td>Path in <code>app.yaml</code></td><td>Phase 0 database file</td></tr>
+          <tr><td><code>OCTOCRAFT_MIGRATIONS_DIR</code></td><td>Built-in location (Helm: <code>/app/db/migrations</code>)</td><td>SQLite schema migrations</td></tr>
+          <tr><td><code>OCTOCRAFT_TRUSTED_PROXY_CIDRS</code></td><td>None</td><td>Source ranges allowed to set identity headers</td></tr>
+          <tr><td><code>OCTOCRAFT_DEV_AUTH</code>, <code>OCTOCRAFT_DEV_ROLES</code></td><td>Off; all five roles</td><td>Loopback-only development sign-in</td></tr>
+          <tr><td><code>INGEST_TOKEN</code> or <code>INGEST_TOKEN_FILE</code></td><td><code>dev-ingest-token</code></td><td>IssueOps bearer token; required when <code>VAULT_ONLY=true</code></td></tr>
+          <tr><td><code>GITHUB_TOKEN</code> or <code>GITHUB_TOKEN_FILE</code></td><td>None</td><td>Optional result comment on the request issue</td></tr>
+          <tr><td><code>VAULT_ONLY</code></td><td><code>false</code> (Helm: <code>true</code>)</td><td>Forces Key Vault delivery; refuses mock vault, HashiCorp Vault and ZIP</td></tr>
+          <tr><td><code>KEY_VAULT_URL</code></td><td>None</td><td>Azure Key Vault destination</td></tr>
+          <tr><td><code>VAULT_ADDR</code>, <code>VAULT_TOKEN</code>, <code>VAULT_KV_MOUNT</code>, <code>VAULT_PATH_PREFIX</code></td><td>None, none, <code>secret</code>, <code>github-apps</code></td><td>HashiCorp Vault destination</td></tr>
+          <tr><td><code>STORAGE_ACCOUNT_NAME</code>, <code>REQUESTS_TABLE</code>, <code>OUTBOX_CONTAINER</code></td><td>None, none, <code>outbox</code></td><td>Azure Table request store and Blob outbox (Functions runtime)</td></tr>
+          <tr><td><code>ALLOW_SIMULATE</code></td><td>On unless set to <code>false</code> (Helm: <code>false</code>)</td><td>Simulated credentials for testing; creates no GitHub App</td></tr>
+          <tr><td><code>BASE_URL</code>, <code>GITHUB_WEB_URL</code>, <code>GITHUB_API_URL</code></td><td>None, <code>https://github.com</code>, <code>https://api.github.com</code></td><td>Callback origin; GitHub or GHES endpoints</td></tr>
+          <tr><td><code>SNOW_APIM_KEY</code></td><td>None</td><td>ServiceNow APIM key named by the connection file</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>GitHub Actions variables and secrets</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Type</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td><code>APP_FACTORY_ENABLED</code></td><td>Variable</td><td>Gates the Functions IssueOps and deploy jobs; currently <code>false</code></td></tr>
+          <tr><td><code>APP_FACTORY_URL</code>, <code>APP_FACTORY_INGEST_TOKEN</code></td><td>Variable, secret</td><td>IssueOps ingest destination and bearer token</td></tr>
+          <tr><td><code>AZURE_CLIENT_ID</code>, <code>AZURE_TENANT_ID</code>, <code>AZURE_SUBSCRIPTION_ID</code>, <code>AZURE_FUNCTIONAPP_NAME</code></td><td>Variables</td><td>Functions deployment through OIDC</td></tr>
+          <tr><td><code>AKS_AZURE_CLIENT_ID</code>, <code>AKS_RESOURCE_GROUP</code>, <code>AKS_CLUSTER_NAME</code></td><td>Variables</td><td>AKS deployer identity and target cluster</td></tr>
+          <tr><td><code>AKS_KEY_VAULT_URL</code>, <code>AKS_WORKLOAD_IDENTITY_CLIENT_ID</code>, <code>AKS_WORKLOAD_IDENTITY_TENANT_ID</code>, <code>AKS_TRUSTED_PROXY_CIDRS</code></td><td>Variables</td><td>Helm values for the AKS release</td></tr>
+          <tr><td><code>TF_STATE_RESOURCE_GROUP</code>, <code>TF_STATE_STORAGE_ACCOUNT</code>, <code>TF_STATE_CONTAINER</code>, <code>TF_STATE_LOCATION</code></td><td>Variables</td><td>Remote Terraform state for <code>infra/aks</code></td></tr>
+          <tr><td><code>GHCR_READ_TOKEN</code></td><td>Secret</td><td>Pulls the private chart and image from GHCR</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 06 Security -->
+    <section id="security">
+      <h2><span class="num">06</span>Security and access</h2>
+      <p class="lead">OctoCraft does not sign users in itself: an identity-aware front door does, and OctoCraft trusts the identity it forwards. On Functions that is Easy Auth with Entra ID; on AKS it is an Entra OIDC proxy (oauth2-proxy).</p>
+
+      <h3>Identity and roles</h3>
+      <ul>
+        <li><strong>Trusted headers.</strong> <code>/api/v1</code> reads <code>X-Octocraft-Subject</code> and <code>X-Octocraft-Roles</code> only from <code>OCTOCRAFT_TRUSTED_PROXY_CIDRS</code>. Outside development mode, the server refuses to start without at least one CIDR of <code>/16</code> or narrower. The proxy must strip client-supplied copies.</li>
+        <li><strong>Development sign-in.</strong> <code>OCTOCRAFT_DEV_AUTH=true</code> grants roles to loopback clients only. Helm never enables it.</li>
+        <li><strong>IssueOps ingest.</strong> <code>POST /api/ingest</code> checks a bearer token with a constant-time comparison.</li>
+        <li><strong>GitHub App workspace.</strong> These routes have no in-app role check; access depends entirely on the front door. Actions are attributed from <code>X-MS-CLIENT-PRINCIPAL-NAME</code>.</li>
+      </ul>
+      <p>Roles match exactly. <code>admin</code> does not inherit the other roles, so a person who needs to approve and run jobs needs <code>approver</code> and <code>operator</code> as well.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Phase 0 action</th><th>Endpoint</th><th>Required role</th></tr></thead>
+        <tbody>
+          <tr><td>Read connections, sync runs, tickets, jobs, events</td><td><code>GET /api/v1/...</code></td><td>Any of the five roles</td></tr>
+          <tr><td>Test a ServiceNow connection</td><td><code>POST /api/v1/connections/{id}/test</code></td><td><code>admin</code></td></tr>
+          <tr><td>Trigger a sync, reprocess a ticket</td><td><code>POST .../sync</code>, <code>POST .../reprocess</code></td><td><code>operator</code></td></tr>
+          <tr><td>Approve or reject a job</td><td><code>POST /api/v1/jobs/{id}/approve</code>, <code>.../reject</code></td><td><code>approver</code></td></tr>
+          <tr><td>Execute a job</td><td><code>POST /api/v1/jobs/{id}/execute</code></td><td><code>operator</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Workload hardening (Helm)</h3>
+      <ul>
+        <li>Runs as non-root UID 10001 with a read-only root filesystem, all Linux capabilities dropped and a seccomp profile.</li>
+        <li>Service account token is not mounted; the Service is <code>ClusterIP</code> with no public ingress.</li>
+        <li>A NetworkPolicy admits port 3000 only from pods labelled <code>oauth2-proxy</code> in the <code>octocraft-auth</code> namespace.</li>
+        <li>Tokens are mounted read-only from the <code>octocraft-secrets</code> Secret; Helm values never hold credentials.</li>
+        <li>Workload Identity grants the pod Key Vault Secrets Officer on its own vault only.</li>
+      </ul>
+
+      <h3>Repository governance</h3>
+      <ul>
+        <li><code>CODEOWNERS</code> assigns every path to BK3820.</li>
+        <li>The <code>main</code> ruleset requires a pull request with one code-owner approval, linear history and green <code>build</code>, <code>terraform</code> and <code>ui</code> checks. It blocks deletion and force-push. It is stored in Git and applied after the GitHub plan upgrade.</li>
+        <li>The <code>production</code> environment accepts only <code>main</code> and has admin bypass disabled. GitHub rejected required-reviewer enforcement on the current plan, so the Functions deploy uses a manual-approval issue instead.</li>
+      </ul>
+
+      <h3>Sensitive data to handle with care</h3>
+      <ul>
+        <li>ZIP outbox files contain live credentials; email drafts are neither sent nor encrypted.</li>
+        <li>Terraform state for the Functions runtime contains the ingest token.</li>
+        <li>Entra sign-in admits the whole tenant; it is not an approver allowlist.</li>
+      </ul>
+    </section>
+
+    <!-- 07 Running locally -->
+    <section id="running-locally">
+      <h2><span class="num">07</span>Running locally</h2>
+      <p class="lead">The fastest path is <code>go run ./cmd/server</code> with development sign-in, which serves the dashboard at <code>http://localhost:3000</code> in a few seconds. It uses a local file store, a mock vault and a local ZIP outbox, so it never touches GitHub or Azure.</p>
+
+      <h3>Prerequisites</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tool</th><th>Version</th><th>Needed for</th></tr></thead>
+        <tbody>
+          <tr><td>Go</td><td>1.27+</td><td>Building and running the server</td></tr>
+          <tr><td>Git</td><td>Any</td><td>Cloning</td></tr>
+          <tr><td>Docker with Compose</td><td>Any recent</td><td>Optional containerized run</td></tr>
+          <tr><td>Node.js and npm</td><td>22+</td><td>Seed helper, IssueOps parser test, Playwright UI tests</td></tr>
+          <tr><td>Azure Functions Core Tools</td><td>4.12+</td><td>Only to run the Functions worker</td></tr>
+          <tr><td>Terraform, Azure CLI</td><td>1.10+, any</td><td>Only for infrastructure work</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Run the server</h3>
+<pre><code>go mod download
+OCTOCRAFT_SQLITE_PATH=./data/octocraft.db OCTOCRAFT_DEV_AUTH=true go run ./cmd/server</code></pre>
+      <p>The server binds to all interfaces, so do not run development mode on a shared network. Local data under <code>data/</code> is ignored by Git.</p>
+
+      <h3>Add sample requests</h3>
+<pre><code>npm ci
+npm run seed</code></pre>
+      <p>The seed posts three requests through the real IssueOps parser: <code>acme-ci-bot</code> (Vault), <code>release-notifier</code> (ZIP) and <code>security-scanner</code> (Vault). Use <strong>Simulate</strong> in the dashboard to exercise credential delivery with fake values.</p>
+
+      <h3>Run in a container</h3>
+<pre><code>docker compose up --build --detach
+docker compose logs -f app
+docker compose down            <span class="cm"># --volumes also deletes local data</span></code></pre>
+      <p>Compose publishes only on <code>127.0.0.1:3000</code>, runs as UID 10001 with a read-only root filesystem, drops all capabilities and keeps data in the <code>factory-data</code> volume.</p>
+
+      <h3>Run the Azure Functions worker</h3>
+<pre><code>cp local.settings.example.json local.settings.json
+func start</code></pre>
+    </section>
+
+    <!-- 08 Testing -->
+    <section id="testing">
+      <h2><span class="num">08</span>Testing and CI</h2>
+      <p class="lead">Every pull request to <code>main</code> runs three CI jobs (<code>terraform</code>, <code>ui</code>, <code>build</code>); the stored <code>main</code> ruleset makes them required once it is applied. A merge that changes code publishes a release automatically. Changes to Markdown, <code>docs/**</code>, the license or notices skip CI.</p>
+
+      <h3>Test suites</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Suite</th><th>Scope</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap">Go unit tests</td><td>77 test functions across config, factory, API, jobs, SQLite, ServiceNow and backup</td><td><code>go test ./...</code></td></tr>
+          <tr><td class="nowrap">IssueOps parser</td><td>Issue body to manifest conversion</td><td><code>node --test test/issue-to-request.test.js</code> (part of <code>npm test</code>)</td></tr>
+          <tr><td class="nowrap">Browser tests</td><td>8 Playwright tests against a temporary Go server: queue, search, drafts, handoff, errors, mobile layout</td><td><code>npm run test:ui</code></td></tr>
+          <tr><td class="nowrap">Helm chart</td><td>Strict lint and rendered-manifest checks with the AKS example values</td><td><code>bash test/helm-chart.sh</code></td></tr>
+          <tr><td class="nowrap">AKS workflow and scripts</td><td>Static checks of <code>deploy-aks.yml</code> and <code>scripts/aks/</code></td><td><code>bash test/aks-infra.sh</code></td></tr>
+          <tr><td class="nowrap">Terraform</td><td>Format, validate, and <code>terraform test</code> for the Functions root</td><td><code>terraform -chdir=infra test</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>Browser tests need <code>npx playwright install chromium</code> once. They create no GitHub Apps and no Azure resources.</p>
+
+      <h3>CI pipeline (<code>ci.yml</code>)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Job</th><th>Runs</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>changes</code></td><td>Detects whether build inputs changed</td><td>Every PR and push to <code>main</code></td></tr>
+          <tr><td><code>terraform</code></td><td>Format, init, validate and test both Terraform roots</td><td>Code changed</td></tr>
+          <tr><td><code>ui</code></td><td>Builds the server, installs Chromium, runs Playwright</td><td>Code changed</td></tr>
+          <tr><td><code>build</code></td><td><code>go vet</code>, unit tests, Helm and AKS checks, container build and health smoke test</td><td>Code changed</td></tr>
+          <tr><td><code>release</code></td><td>Versioned multi-arch image, OCI Helm chart and GitHub Release</td><td>Push to <code>main</code>, after the three jobs pass</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Other workflows</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Workflow</th><th>Trigger</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>IssueOps - GitHub App request</td><td>Issue opened or labelled</td><td>Builds the manifest and posts it to OctoCraft</td></tr>
+          <tr><td>Deploy AKS release (manual)</td><td>Manual, <code>main</code> only</td><td>Converges AKS with Terraform and installs the latest release</td></tr>
+          <tr><td>Deploy Azure Functions (manual)</td><td>Manual, <code>main</code> only; gated by <code>APP_FACTORY_ENABLED</code></td><td>Packages, waits up to 6 hours for issue approval, deploys, smoke-tests</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 09 Deployment -->
+    <section id="deployment">
+      <h2><span class="num">09</span>Deployment</h2>
+      <p class="lead">There is one live deployment path: a manual GitHub Actions run that installs the latest stable release on the existing AKS POC cluster. The Azure Functions path is scripted and documented but switched off.</p>
+
+      <h3>Release artifacts</h3>
+      <p>Every code merge to <code>main</code> bumps the patch version and publishes three artifacts. To release a minor or major version, raise <code>version</code> and <code>appVersion</code> in <code>charts/octocraft/Chart.yaml</code> in the pull request. All packages are private.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Artifact</th><th>Location</th></tr></thead>
+        <tbody>
+          <tr><td>Git tag and GitHub Release</td><td><code>vX.Y.Z</code>, chart <code>.tgz</code> attached, generated notes</td></tr>
+          <tr><td>Container image (amd64, arm64)</td><td><code>ghcr.io/bk3820/octocraft:X.Y.Z</code> and <code>:sha-&lt;short&gt;</code></td></tr>
+          <tr><td>Helm chart (OCI)</td><td><code>oci://ghcr.io/bk3820/octocraft-charts/octocraft --version X.Y.Z</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>AKS POC environment</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Resource</th><th>Current value</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap">Resource group</td><td><code>rg-octocraft-aks</code>, East US 2</td></tr>
+          <tr><td class="nowrap">Cluster</td><td><code>aks-octocraft-poc</code>: Free tier, Kubernetes 1.36, one <code>Standard_D2s_v3</code> node in zone 2</td></tr>
+          <tr><td class="nowrap">Outbound IP</td><td>Static <code>pip-octocraft-aks-egress</code>, zone 2</td></tr>
+          <tr><td class="nowrap">Identities</td><td><code>id-aks-octocraft-poc</code> (control plane), <code>id-octocraft-app-poc</code> (pod Workload Identity)</td></tr>
+          <tr><td class="nowrap">Key Vault</td><td><code>kvoctocraftpoc679e2240</code>: RBAC, 7-day soft delete, purge protection on</td></tr>
+          <tr><td class="nowrap">App data</td><td>1 GiB retained managed-disk PVC (<code>managed-csi</code>) holding SQLite</td></tr>
+          <tr><td class="nowrap">Terraform state</td><td>Versioned Blob container <code>tfstate</code> in the separate <code>rg-octocraft-tfstate</code> group</td></tr>
+          <tr><td class="nowrap">Estimated cost</td><td>About $70/month for the node at East US 2 retail, plus IP, disk, Key Vault and state storage</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>What a release run does</h3>
+      <p>An operator starts <strong>Deploy AKS release (manual)</strong> from <code>main</code>. Runs are serialized, limited to 60 minutes, and use the <code>aks-poc</code> environment.</p>
+      <ol>
+        <li>Resolve the latest stable GitHub Release once and confirm its OCI chart exists. A failure here stops the run before any Azure change.</li>
+        <li>Sign in to Azure through GitHub OIDC as <code>id-octocraft-aks-deployer</code>; no client secret exists.</li>
+        <li>Create or verify the remote state storage.</li>
+        <li>Initialise Terraform, import any existing resource missing from state, validate and plan.</li>
+        <li>Stop if the plan deletes or replaces anything; otherwise apply the saved plan.</li>
+        <li>Run <code>helm upgrade</code> with the exact chart and image version.</li>
+        <li>Wait for rollout, check <code>/api/health</code> through a loopback port-forward, and write a run summary.</li>
+      </ol>
+      <p>The deployer identity holds Contributor on <code>rg-octocraft-aks</code>, Cluster User on the cluster, Managed Identity Operator on the control-plane identity, and RBAC Administrator only on the outbound IP and Key Vault. On the state group it holds Contributor and Storage Blob Data Contributor.</p>
+
+      <h3>Rollback, backup and recovery</h3>
+      <ul>
+        <li><strong>Rollback:</strong> a reviewed <code>helm upgrade</code> to the previous release tag. A normal run always picks the latest release.</li>
+        <li><strong>Blocked plan:</strong> fix drift in a separately reviewed change. Never remove the delete guard or delete the PVC or Key Vault to get a green run.</li>
+        <li><strong>Backup:</strong> <code>cmd/dbbackup</code> takes an online SQLite backup and runs <code>PRAGMA integrity_check</code>. Store copies outside the PVC and test a restore before relying on them.</li>
+      </ul>
+
+      <h3>Azure Functions runtime (dormant)</h3>
+      <p><code>scripts/provision.sh</code> recreates the Functions infrastructure with Terraform, and <code>deploy.yml</code> deploys it behind an approval issue that waits up to 6 hours. The illustrative low-volume Azure cost is about $2.85/month. Both stay off while <code>APP_FACTORY_ENABLED=false</code>.</p>
+    </section>
+
+    <!-- 10 Findings -->
+    <section id="findings">
+      <h2><span class="num">10</span>Review findings</h2>
+      <p class="lead">The setup is a well-documented, security-conscious proof of concept. Two gaps matter most before wider use: the GitHub App workspace has no role check of its own, and credentials can be lost after GitHub&rsquo;s one-time exchange.</p>
+
+      <h3>What is working well</h3>
+      <ul>
+        <li>Deployments are manual, run only from <code>main</code>, use OIDC with no stored cloud secrets, and stop on any destructive Terraform plan.</li>
+        <li>The workload is hardened: non-root, read-only filesystem, no capabilities, internal-only service, NetworkPolicy to the proxy.</li>
+        <li>ServiceNow approvals bind to a plan hash, block self-approval and never auto-execute.</li>
+        <li>Docs, diagrams and tests cover Go code, UI, Helm, Terraform and the deploy workflow.</li>
+      </ul>
+
+      <h3>Findings</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th class="col-num">#</th><th>Finding</th><th>Severity</th><th>Recommendation</th></tr></thead>
+        <tbody>
+          <tr><td class="col-num">1</td><td>GitHub App routes (start, simulate, reject, reset, outbox download) have no role check; anyone the front door admits can use them; on Functions, Easy Auth admits the whole tenant</td><td><span class="sev sev-high">High</span></td><td>Require <code>approver</code> / <code>operator</code> on these routes using the same trusted-header principal as <code>/api/v1</code>, or assign the Entra app to an approver group</td></tr>
+          <tr><td class="col-num">2</td><td>If delivery fails after GitHub&rsquo;s one-time code exchange, the app exists but its secrets are lost and the request stays <code>awaiting_github</code></td><td><span class="sev sev-high">High</span></td><td>Encrypt and persist the exchange result before delivery; add a reconcile action</td></tr>
+          <tr><td class="col-num">3</td><td>Outside Helm, an unset <code>INGEST_TOKEN</code> falls back to <code>dev-ingest-token</code> and <code>ALLOW_SIMULATE</code> defaults on; Compose ships both defaults</td><td><span class="sev sev-med">Medium</span></td><td>Refuse to start without a token unless dev sign-in is on; default simulation to off</td></tr>
+          <tr><td class="col-num">4</td><td>The GitHub App workspace records the actor from <code>X-MS-CLIENT-PRINCIPAL-NAME</code>, an Easy Auth header. The proxy config is not in this repo, so AKS attribution is unverified</td><td><span class="sev sev-med">Medium</span></td><td>Confirm the proxy sets it, or read <code>X-Octocraft-Subject</code> in both APIs</td></tr>
+          <tr><td class="col-num">5</td><td>GitHub App requests live in <code>/data/requests.json</code> while Phase 0 uses SQLite; <code>cmd/dbbackup</code> backs up only SQLite</td><td><span class="sev sev-med">Medium</span></td><td>Move requests into SQLite, or extend the backup runbook to cover <code>requests.json</code></td></tr>
+          <tr><td class="col-num">6</td><td>One replica, one node, one zonal disk and a <code>Recreate</code> rollout: every release or node event is downtime</td><td><span class="sev sev-med">Medium</span></td><td>Accept for the POC; plan HA storage and replicas before production</td></tr>
+          <tr><td class="col-num">7</td><td>One code owner; the <code>main</code> ruleset is stored but applied only after a GitHub plan upgrade; environment reviewers were rejected</td><td><span class="sev sev-med">Medium</span></td><td>Add a second code owner; apply the ruleset once the plan allows</td></tr>
+          <tr><td class="col-num">8</td><td><code>admin</code> does not include <code>operator</code> or <code>approver</code>; whether that separation is intended is not documented</td><td><span class="sev sev-low">Low</span></td><td>Decide and document; add inheritance if not intended</td></tr>
+          <tr><td class="col-num">9</td><td>Docs drift: <code>operations.md</code> says the AKS bootstrap grants User Access Administrator (the script does not); README mixes <code>BK3820/octocraft</code> and <code>StrawHat-Enterprise/octocraft</code>; README still shows the old PNG logo</td><td><span class="sev sev-low">Low</span></td><td>Correct the runbook step, pick one repository owner, update the README logo</td></tr>
+          <tr><td class="col-num">10</td><td>The request list scans every row and the dashboard polls every 10 s when idle</td><td><span class="sev sev-low">Low</span></td><td>Fine at POC volume; add pagination and delta refresh before scale</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 11 Roadmap -->
+    <section id="roadmap">
+      <h2><span class="num">11</span>Roadmap</h2>
+      <p class="lead">The platform design spec sets five phases. Only Phase 0 is built, and no phase has a date yet.</p>
+      <figure>
+        <div class="fig-scroll">
+          <svg class="dg" viewBox="0 0 760 632" role="img" aria-labelledby="road-title">
+            <title id="road-title">Phase 0 is in code; real ServiceNow data is needed to pass its gate</title>
+            <defs><marker id="road-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="dg-head" d="M0 0L10 5L0 10z"/></marker></defs>
+            <text class="dg-title" x="24" y="28">Phase 0 is in code; real ServiceNow data is needed to pass its gate</text>
+            <text class="dg-sub" x="24" y="48">Phases from the platform design spec, revised 7 Nov 2026; no dates are set</text>
+            <rect class="dg-accent" x="24" y="72" width="712" height="72" rx="8"/>
+            <text class="dg-name" x="40" y="96">Phase 0 &#183; ServiceNow intake and job foundation</text>
+            <text class="dg-ink" x="40" y="112">SCTASK polling, catalog routing, plan-hash approvals, SQLite store, writeback outbox</text>
+            <text class="dg-ink" x="40" y="128">Now: in code; the sample connection is disabled and catalog IDs are placeholders</text>
+            <polygon class="dg-box" points="364,192 380,176 396,192 380,208"/>
+            <text class="dg-name" x="408" y="180">Phase 0 acceptance gate</text>
+            <text class="dg-line" x="408" y="196">Real catalog items route without duplicates</text>
+            <text class="dg-line" x="408" y="212">Errors stay visible and never execute</text>
+            <text class="dg-line" x="408" y="228">Data survives restart; a backup restores</text>
+            <rect class="dg-box" x="24" y="248" width="712" height="72" rx="8"/>
+            <text class="dg-name" x="40" y="272">Phase 1 &#183; Delegated GitHub administration MVP</text>
+            <text class="dg-line" x="40" y="288">One organization; repository creation from templates and team access changes</text>
+            <text class="dg-line" x="40" y="304">Read-only inventory, policy records, dry-run plans; drift shown as requests, never auto-fixed</text>
+            <rect class="dg-box" x="24" y="344" width="712" height="72" rx="8"/>
+            <text class="dg-name" x="40" y="368">Phase 2 &#183; Enterprise policy</text>
+            <text class="dg-line" x="40" y="384">Actions allowlist changes where the GitHub API allows; an admin task otherwise</text>
+            <text class="dg-line" x="40" y="400">Versioned policies, with approval for sensitive policy changes</text>
+            <rect class="dg-box" x="24" y="440" width="712" height="72" rx="8"/>
+            <text class="dg-name" x="40" y="464">Phase 3 &#183; Opt-in reconciliation and repository backup</text>
+            <text class="dg-line" x="40" y="480">Report, propose or reconcile mode per policy, each with an owner and audit trail</text>
+            <text class="dg-line" x="40" y="496">Encrypted repository backups with retention, integrity and restore checks</text>
+            <rect class="dg-box" x="24" y="536" width="712" height="72" rx="8"/>
+            <text class="dg-name" x="40" y="560">Phase 4 &#183; Integrations and analytics</text>
+            <text class="dg-line" x="40" y="576">Vault and provider credentials; Azure and AWS adapters behind interfaces</text>
+            <text class="dg-line" x="40" y="592">Actions usage and cost-center analytics; organization-level compliance views</text>
+            <path class="dg-edge" d="M380 144V176" marker-end="url(#road-arrow)"/>
+            <path class="dg-edge" d="M380 208V248" marker-end="url(#road-arrow)"/>
+            <path class="dg-edge" d="M380 320V344" marker-end="url(#road-arrow)"/>
+            <path class="dg-edge" d="M380 416V440" marker-end="url(#road-arrow)"/>
+            <path class="dg-edge" d="M380 512V536" marker-end="url(#road-arrow)"/>
+          </svg>
+        </div>
+        <figcaption>Platform roadmap &middot; 5 phases, 1 gate</figcaption>
+      </figure>
+      <p>Phases 2 to 4 stay candidates until their API, backup, licensing and cost-data decisions are made.</p>
+    </section>
+
+    <footer class="footer">
+      <span>OctoCraft &middot; GitHub, managed as code</span>
+      <span>Snapshot of 17 November 2026 &middot; OctoCraft is licensed under Apache-2.0</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement, KEY = 'octocraft-docs-theme';
+  var toggle = document.getElementById('themeToggle');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var current = root.getAttribute('data-theme');
+      var isDark = current ? current === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var next = isDark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem(KEY, next); } catch (e) {}
+    });
+  }
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var code = pre.querySelector('code');
+    if (!code) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copy';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', 'Copy code');
+    button.addEventListener('click', function () {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+      navigator.clipboard.writeText(code.innerText).then(function () {
+        button.textContent = 'Copied';
+        setTimeout(function () { button.textContent = 'Copy'; }, 1500);
+      }, function () {});
+    });
+    pre.appendChild(button);
+  });
+
+  var details = document.querySelector('.toc details');
+  var small = window.matchMedia('(max-width: 1000px)');
+  if (details && small.matches) details.removeAttribute('open');
+  document.querySelectorAll('.toc a').forEach(function (link) {
+    link.addEventListener('click', function () { if (details && small.matches) details.removeAttribute('open'); });
+  });
+
+  if ('IntersectionObserver' in window) {
+    var links = {};
+    document.querySelectorAll('.toc a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
+    var active = null;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var link = links[entry.target.id];
+        if (!link || link === active) return;
+        if (active) active.classList.remove('active');
+        link.classList.add('active');
+        active = link;
+      });
+    }, { rootMargin: '-72px 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (section) { observer.observe(section); });
+  }
+})();
+</script>
+</body>
+</html>
